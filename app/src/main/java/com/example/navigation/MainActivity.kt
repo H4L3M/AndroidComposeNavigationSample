@@ -4,50 +4,122 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
-import androidx.navigation.NavType
+import androidx.navigation.*
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.example.navigation.ui.theme.NavigationTheme
+import java.util.*
 
+
+val items = listOf(
+    Screen.Home,
+    Screen.Home2,
+)
+
+val icons = listOf(
+    Icons.Rounded.Home,
+    Icons.Rounded.Favorite,
+)
+
+@ExperimentalMaterial3Api
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             NavigationTheme {
                 // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
-                ) {
-                    Main()
+                val navController = rememberNavController()
+
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    topBar = {
+                        SmallTopAppBar(
+                            title = { Text(text = "Toolbar") },
+                            navigationIcon = {
+
+                            },
+                            colors = TopAppBarDefaults.smallTopAppBarColors(MaterialTheme.colorScheme.primary)
+                        )
+                    },
+
+                    bottomBar = {
+                        NavigationBar {
+                            val navBackStackEntry by navController.currentBackStackEntryAsState()
+                            val currentDestination = navBackStackEntry?.destination
+                            items.forEach { screen ->
+                                NavigationBarItem(
+                                    icon = {
+                                        Icon(
+                                            imageVector = screen.icon!!,
+                                            contentDescription = null
+                                        )
+                                    },
+                                    label = { Text(text = screen.route.uppercase(Locale.getDefault())) },
+                                    selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                                    onClick = {
+                                        navController.navigate(screen.route) {
+                                            // Pop up to the start destination of the graph to
+                                            // avoid building up a large stack of destinations
+                                            // on the back stack as users select items
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            // Avoid multiple copies of the same destination when
+                                            // reselecting the same item
+                                            launchSingleTop = true
+                                            // Restore state when reselecting a previously selected item
+                                            restoreState = true
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                ) { paddingValues ->
+                    Column(Modifier.padding(paddingValues = paddingValues)) {
+                        Main(navController = navController)
+                    }
                 }
             }
         }
     }
 }
 
+@ExperimentalMaterial3Api
 @Composable
-fun Main() {
-    val navController = rememberNavController()
+fun Main(navController: NavHostController) {
 
     NavHost(navController = navController, startDestination = Screen.Home.route) {
         composable(route = Screen.Home.route) {
             Home(navController = navController)
+        }
+
+        composable(route = Screen.Home2.route) {
+            Home2(navController = navController)
         }
 
         composable(
@@ -55,12 +127,12 @@ fun Main() {
             arguments = listOf(
                 navArgument("name") {
                     type = NavType.StringType
-                    defaultValue = ""
+                    defaultValue = "zmar safi"
                     nullable = true
                 },
             ),
         ) {
-            Detail(name = it.arguments?.getString("name"))
+            Detail(navController = navController, name = it.arguments?.getString("name"))
         }
     }
 
@@ -79,7 +151,11 @@ fun Home(navController: NavHostController) {
         verticalArrangement = Arrangement.Center
     ) {
 
-        OutlinedTextField(value = text, onValueChange = { text = it })
+        OutlinedTextField(
+            value = text,
+            onValueChange = { text = it },
+            placeholder = { Text(text = "insert some characters here a zmer") }
+        )
         Spacer(modifier = Modifier.height(24.dp))
         Button(
             modifier = Modifier.fillMaxWidth(),
@@ -87,34 +163,73 @@ fun Home(navController: NavHostController) {
                 if (text.isNotEmpty()) {
                     navController.navigate(route = Screen.Detail.withArgs(text))
                 } else {
-                    Toast.makeText(context, "please enter a text", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        "atkhli dak l7za9 khawi? aytra lik mochkil a sat",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }) {
-            Text(text = "Send")
+            Text(text = "brek")
         }
     }
 }
 
 @Composable
-fun Detail(name: String?) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = "hi : $name", fontSize = 16.sp)
+fun Home2(navController: NavHostController) {
+
+    Column(
+        modifier = Modifier
+            .padding(all = 50.dp)
+            .background(color = Color(0xFF00BCD4))
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+
+        Text(text = "Home 2", fontSize = 36.sp)
+
     }
 }
 
-
-@Preview(showBackground = true)
+@ExperimentalMaterial3Api
 @Composable
-fun DefaultPreview() {
-    NavigationTheme {
-        Main()
+fun Detail(navController: NavHostController, name: String?) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        IconButton(
+            onClick = {
+                navController.popBackStack()
+            },
+        ) {
+            Card(
+                modifier = Modifier
+                    .padding(4.dp)
+                    .clip(CircleShape)
+                    .background(color = Color.White)
+                    .size(56.dp),
+                elevation = CardDefaults.elevatedCardElevation(2.dp)
+            ) {
+
+                Icon(
+                    modifier = Modifier.fillMaxSize(),
+                    imageVector = Icons.Rounded.ArrowBack, contentDescription = ""
+                )
+            }
+        }
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+
+            Text(text = "afiin : $name", fontSize = 16.sp)
+        }
     }
 }
 
-
-sealed class Screen(val route: String) {
-    object Home : Screen(route = "home")
-    object Detail : Screen(route = "detail")
+sealed class Screen(val route: String, val icon: ImageVector?) {
+    object Home : Screen(route = "home", icon = Icons.Rounded.Home)
+    object Home2 : Screen(route = "home2", Icons.Rounded.Favorite)
+    object Detail : Screen(route = "detail", null)
 
     fun withArgs(vararg args: String): String {
         return buildString {
@@ -124,4 +239,43 @@ sealed class Screen(val route: String) {
             }
         }
     }
+}
+
+@Composable
+fun navigationIcon(navController: NavController): @Composable (() -> Unit)? {
+    val previousBackStackEntry: NavBackStackEntry? by navController.previousBackStackEntryAsState()
+    return previousBackStackEntry?.let {
+        {
+            IconButton(onClick = {
+                navController.popBackStack()
+            }) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Up button")
+            }
+        }
+    }
+}
+
+/**
+ * Gets the previous navigation back stack entry as a [MutableState]. When the given navController
+ * changes the back stack due to a [NavController.navigate] or [NavController.popBackStack] this
+ * will trigger a recompose and return the second top entry on the back stack.
+ *
+ * @return a mutable state of the previous back stack entry
+ */
+@Composable
+fun NavController.previousBackStackEntryAsState(): State<NavBackStackEntry?> {
+    val previousNavBackStackEntry = remember { mutableStateOf(previousBackStackEntry) }
+    // setup the onDestinationChangedListener responsible for detecting when the
+    // previous back stack entry changes
+    DisposableEffect(this) {
+        val callback = NavController.OnDestinationChangedListener { controller, _, _ ->
+            previousNavBackStackEntry.value = controller.previousBackStackEntry
+        }
+        addOnDestinationChangedListener(callback)
+        // remove the navController on dispose (i.e. when the composable is destroyed)
+        onDispose {
+            removeOnDestinationChangedListener(callback)
+        }
+    }
+    return previousNavBackStackEntry
 }
