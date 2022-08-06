@@ -115,7 +115,9 @@ fun Main(navController: NavHostController) {
 
     NavHost(navController = navController, startDestination = Screen.Home.route) {
         composable(route = Screen.Home.route) {
-            Home(navController = navController)
+            Home {
+                navController.navigate(route = Screen.Detail.withArgs(it))
+            }
         }
 
         composable(route = Screen.Home2.route) {
@@ -139,8 +141,7 @@ fun Main(navController: NavHostController) {
 }
 
 @Composable
-fun Home(navController: NavHostController) {
-
+fun Home(onNavigate: (String) -> Unit) {
     var text by rememberSaveable { mutableStateOf("") }
     val context = LocalContext.current
     Column(
@@ -161,7 +162,7 @@ fun Home(navController: NavHostController) {
             modifier = Modifier.fillMaxWidth(),
             onClick = {
                 if (text.isNotEmpty()) {
-                    navController.navigate(route = Screen.Detail.withArgs(text))
+                    onNavigate(text)
                 } else {
                     Toast.makeText(
                         context,
