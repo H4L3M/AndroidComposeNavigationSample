@@ -6,11 +6,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material3.*
@@ -18,7 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -54,13 +50,35 @@ class MainActivity : ComponentActivity() {
                 // A surface container using the 'background' color from the theme
                 val navController = rememberNavController()
 
+                var canPop by remember { mutableStateOf(false) }
+
+                navController.addOnDestinationChangedListener { controller, _, _ ->
+                    canPop = controller.previousBackStackEntry != null
+                }
+
+                val navigationIcon: (@Composable () -> Unit)? =
+                    if (canPop) {
+                        {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(
+                                    imageVector = Icons.Filled.ArrowBack,
+                                    contentDescription = null
+                                )
+                            }
+                        }
+                    } else {
+                        null
+                    }
+
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     topBar = {
                         SmallTopAppBar(
                             title = { Text(text = "Toolbar") },
                             navigationIcon = {
-
+                                if (navigationIcon != null) {
+                                    navigationIcon()
+                                }
                             },
                             colors = TopAppBarDefaults.smallTopAppBarColors(MaterialTheme.colorScheme.primary)
                         )
@@ -134,7 +152,7 @@ fun Main(navController: NavHostController) {
                 },
             ),
         ) {
-            Detail(navController = navController, name = it.arguments?.getString("name"))
+            Detail(name = it.arguments?.getString("name"))
         }
     }
 
@@ -195,35 +213,13 @@ fun Home2(navController: NavHostController) {
 
 @ExperimentalMaterial3Api
 @Composable
-fun Detail(navController: NavHostController, name: String?) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        IconButton(
-            onClick = {
-                navController.popBackStack()
-            },
-        ) {
-            Card(
-                modifier = Modifier
-                    .padding(4.dp)
-                    .clip(CircleShape)
-                    .background(color = Color.White)
-                    .size(56.dp),
-                elevation = CardDefaults.elevatedCardElevation(2.dp)
-            ) {
+fun Detail(name: String?) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
 
-                Icon(
-                    modifier = Modifier.fillMaxSize(),
-                    imageVector = Icons.Rounded.ArrowBack, contentDescription = ""
-                )
-            }
-        }
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-
-            Text(text = "afiin : $name", fontSize = 16.sp)
-        }
+        Text(text = "afiin : $name", fontSize = 16.sp)
     }
 }
 
@@ -240,43 +236,4 @@ sealed class Screen(val route: String, val icon: ImageVector?) {
             }
         }
     }
-}
-
-@Composable
-fun navigationIcon(navController: NavController): @Composable (() -> Unit)? {
-    val previousBackStackEntry: NavBackStackEntry? by navController.previousBackStackEntryAsState()
-    return previousBackStackEntry?.let {
-        {
-            IconButton(onClick = {
-                navController.popBackStack()
-            }) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Up button")
-            }
-        }
-    }
-}
-
-/**
- * Gets the previous navigation back stack entry as a [MutableState]. When the given navController
- * changes the back stack due to a [NavController.navigate] or [NavController.popBackStack] this
- * will trigger a recompose and return the second top entry on the back stack.
- *
- * @return a mutable state of the previous back stack entry
- */
-@Composable
-fun NavController.previousBackStackEntryAsState(): State<NavBackStackEntry?> {
-    val previousNavBackStackEntry = remember { mutableStateOf(previousBackStackEntry) }
-    // setup the onDestinationChangedListener responsible for detecting when the
-    // previous back stack entry changes
-    DisposableEffect(this) {
-        val callback = NavController.OnDestinationChangedListener { controller, _, _ ->
-            previousNavBackStackEntry.value = controller.previousBackStackEntry
-        }
-        addOnDestinationChangedListener(callback)
-        // remove the navController on dispose (i.e. when the composable is destroyed)
-        onDispose {
-            removeOnDestinationChangedListener(callback)
-        }
-    }
-    return previousNavBackStackEntry
 }
